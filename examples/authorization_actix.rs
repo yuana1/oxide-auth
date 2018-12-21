@@ -7,16 +7,13 @@ extern crate futures;
 extern crate oxide_auth;
 extern crate url;
 
-use std::sync::Arc;
 
-use actix::{Actor, Addr, Handler, MailboxError, Message};
-use actix::dev::ToEnvelope;
+use actix::{Actor, Addr};
 use actix_web::{server, App, HttpRequest, HttpResponse, Error as AWError};
 use actix_web::http::Method;
 use futures::Future;
 
 use oxide_auth::frontends::actix::*;
-use oxide_auth::frontends::actix::message::*;
 use oxide_auth::code_grant::frontend::{OAuthError, OwnerAuthorization};
 use oxide_auth::primitives::prelude::*;
 use support::actix::dummy_client;
@@ -29,34 +26,29 @@ here</a> to begin the authorization process.
 </html>
 ";
 
-trait AbstractAddr<M: Message> {
-    fn send(&self, message: M) -> Box<Future<Item=M::Result, Error=MailboxError>>;
+type FnEndpoint<State> = CodeGrantEndpoint<
+    State,
+    fn(&mut State) -> AuthorizationFlow,
+    fn(&mut State) -> GrantFlow,
+    fn(&mut State) -> AccessFlow>;
+
+struct State {
+    clients: ClientMap,
+    authorizer: Storage<RandomGenerator>,
+    issuer: TokenSigner,
+    scopes: Box<[Scope]>,
 }
 
-impl<A, M> AbstractAddr<M> for Addr<A> 
-where
-    A: Actor + Handler<M>, 
-    M: Message + Send + 'static,
-    A::Context: ToEnvelope<A, M>,
-    M::Result: Send,
-{
-    fn send(&self, message: M) -> Box<Future<Item=M::Result, Error=MailboxError>> {
-        Box::new(self.send(message))
-    }
+fn endpoint_authorization(state: &mut State) -> AuthorizationFlow {
+    AuthorizationFlow::new(&state.clients, &mut state.authorizer)
 }
 
-trait AbstractEndpoint {
-    fn access_token(&self) -> &AbstractAddr<AccessToken>;
-    fn authorization_code(&self) -> &AbstractAddr<AuthorizationCode>;
-    fn resource_guard(&self) -> &AbstractAddr<Guard>;
-}
+fn endpoint_grant(state: &mut State) -> GrantFlow {
+    GrantFlow::new(&state.clients, &mut state.authorizer, &mut state.issuer)
+} 
 
-impl<T> AbstractEndpoint for T 
-    where T: AbstractAddr<AccessToken> + AbstractAddr<AuthorizationCode> + AbstractAddr<Guard> 
-{
-    fn access_token(&self) -> &AbstractAddr<AccessToken> { self }
-    fn authorization_code(&self) -> &AbstractAddr<AuthorizationCode> { self }
-    fn resource_guard(&self) -> &AbstractAddr<Guard> { self }
+fn endpoint_guard(state: &mut State) -> AccessFlow {
+    AccessFlow::new(&mut state.issuer, &state.scopes)
 }
 
 /// Example of a main function of a rouille server supporting oauth.
@@ -74,22 +66,21 @@ pub fn main() {
     let issuer = TokenSigner::ephemeral();
     let scopes = vec!["default".parse().unwrap()].into_boxed_slice();
 
-    // Emulate static initialization for complex type
-    let scopes: &'static _ = Box::leak(scopes);
+    let state = State {
+        clients,
+        authorizer,
+        issuer,
+        scopes,
+    };
 
-    let endpoint: Addr<_> = CodeGrantEndpoint::new((clients, authorizer, issuer))
-        .with_authorization(|&mut (ref client, ref mut authorizer, _)| {
-            AuthorizationFlow::new(client, authorizer)
-        })
-        .with_grant(|&mut (ref client, ref mut authorizer, ref mut issuer)| {
-            GrantFlow::new(client, authorizer, issuer)
-        })
-        .with_guard(move |&mut (_, _, ref mut issuer)| {
-            AccessFlow::new(issuer, scopes)
-        })
+    let endpoint: Addr<FnEndpoint<State>> = CodeGrantEndpoint::<State>
+        ::new(state)
+        .with_authorization::<fn(&mut State)->AuthorizationFlow>(endpoint_authorization)
+        .with_grant::<fn(&mut State)->GrantFlow>(endpoint_grant)
+        .with_guard::<fn(&mut State)->AccessFlow>(endpoint_guard)
         .start();
 
-    let boxed: Arc<AbstractEndpoint + Send + Sync> = Arc::new(endpoint);
+    let boxed = endpoint;
 
     // Create the main server instance
     server::new(
@@ -99,7 +90,7 @@ pub fn main() {
                     let endpoint = req.state().clone();
                     Box::new(req.oauth2()
                         .authorization_code(handle_get)
-                        .and_then(move |request| endpoint.authorization_code()
+                        .and_then(move |request| endpoint
                             .send(request)
                             .map_err(|_| OAuthError::InvalidRequest)
                             .and_then(|result| result.map(Into::into))
@@ -112,7 +103,7 @@ pub fn main() {
                     let denied = req.query_string().contains("deny");
                     Box::new(req.oauth2()
                         .authorization_code(move |grant| handle_post(denied, grant))
-                        .and_then(move |request| endpoint.authorization_code()
+                        .and_then(move |request| endpoint
                             .send(request)
                             .map_err(|_| OAuthError::InvalidRequest)
                             .and_then(|result| result.map(Into::into))
@@ -125,7 +116,7 @@ pub fn main() {
                 let endpoint = req.state().clone();
                 Box::new(req.oauth2()
                     .access_token()
-                    .and_then(move |request| endpoint.access_token()
+                    .and_then(move |request| endpoint
                         .send(request)
                         .map_err(|_| OAuthError::InvalidRequest)
                         .and_then(|result| result.map(Into::into))
@@ -137,7 +128,7 @@ pub fn main() {
                 let endpoint = req.state().clone();
                 Box::new(req.oauth2()
                     .guard()
-                    .and_then(move |request| endpoint.resource_guard()
+                    .and_then(move |request| endpoint
                         .send(request)
                         .map_err(|_| OAuthError::InvalidRequest)
                         .and_then(|result| result)
