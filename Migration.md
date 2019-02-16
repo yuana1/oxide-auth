@@ -11,6 +11,15 @@ according migration note.
 
 This document is independent of the [release notes](Changes.md).
 
+# v0.5.0 [NEXT]
+
+The refresh token in `IssuedToken` is now optional. A new attribute for the
+token type of the access token has been added, its enum type has a `Default`
+implementation that generates the `Bearer` corresponding variant.
+
+The `Issuer::refresh` method no longer has a default implementation. To
+replicate the old behaviour, its body should simply consist of `Err(())`.
+
 ## v0.4.1
 
 The iron frontend has been reworked greatly. It no longer wraps endpoint

@@ -2,6 +2,15 @@ Versions follow SemVer, of course. Major milestone versions are named in
 alphabetic order and will be accompanied by notes in [the migration
 notes](Migration.md)
 
+# v0.4.3 (2019-???-??) [WIP]
+
+Feature release
+
+Added token refresh
+* An empty refresh token in `IssuedToken` is now interpreted as a missing refresh token
+* Dedicated `Issuer::refresh` method with default (error-)impl to generate updated tokens
+* New `RefreshFlow` utilizing the same `Endpoint` trait as other flows.
+
 # v0.4.2 (2019-Feb-15)
 
 Documentation release
