@@ -53,7 +53,8 @@ impl OAuthFuture {
     pub fn new<S>(request: &HttpRequest<S>) -> Self {
         let request = request.drop_state();
         let body = if let Some(ctype) = request.request().headers().get(header::CONTENT_TYPE) {
-            if ctype == "application/x-www-form-urlencoded" {
+            println!("ctype {:?}", ctype);
+            if ctype.to_str().unwrap().starts_with("application/x-www-form-urlencoded") {
                 Some(UrlEncoded::new(&request))
             } else {
                 None
@@ -222,6 +223,7 @@ impl Future for OAuthFuture {
             Some(Err(_)) => Err(()),
             None => Ok(None),
         };
+        println!("{:?}", auth);
 
         Ok(Async::Ready(OAuthRequest {
             query,
@@ -256,7 +258,12 @@ impl WebRequest for OAuthRequest {
      fn authheader(&mut self) -> Result<Option<Cow<str>>, Self::Error>{
          match &self.auth {
              &Ok(Some(ref string)) => Ok(Some(Cow::Borrowed(string))),
-             &Ok(None) => Ok(None),
+             &Ok(None) => {
+                 let query = self.query.unwrap();
+                 let client_id = query.unique_value("client_id").unwrap();
+                 let client_secret = query.unique_value("client_secret").unwrap();
+                 Ok(Some(Cow::Borrowed(&("Basic + ".to_owned() + &base64::encode(&(client_id.to_string() + ":" + client_secret.as_ref()))))))
+             },
              &Err(_) => Err(OAuthError::BadRequest)
          }
      }

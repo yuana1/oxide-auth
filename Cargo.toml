@@ -23,6 +23,7 @@ serde_json = "1.0"
 ring = "0.13"
 rmp-serde = "^0.13"
 url = "1.7"
+bytes = "0.4.11"
 
 actix = { version = "0.7.9", optional = true }
 actix-web = { version = "0.7.17", optional = true }

@@ -518,10 +518,11 @@ impl Registrar for ClientMap {
         // Perform exact matching as motivated in the rfc
         match bound.redirect_uri {
             None => (),
-            Some(ref url) if url.as_ref().as_str() == client.redirect_uri.as_str() => (),
+            Some(ref url) if url.as_ref().as_str().starts_with(client.redirect_uri.as_str()) => (),
             _ => return Err(RegistrarError::Unspecified),
         }
 
+        println!("{:?}", bound);
         Ok(BoundClient {
             client_id: bound.client_id,
             redirect_uri: bound.redirect_uri.unwrap_or_else(

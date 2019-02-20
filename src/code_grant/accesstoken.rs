@@ -84,11 +84,13 @@ pub fn access_token(handler: &mut Endpoint, request: &Request) -> Result<BearerT
 
     let authorization = request.authorization();
     let client_id = request.client_id();
+    println!("client_id {:?}, {:?}", client_id, authorization);
     let (client_id, auth): (&str, Option<&[u8]>) = match (&client_id, &authorization) {
         (&None, &Some((ref client_id, ref auth))) => (client_id.as_ref(), Some(auth.as_ref())),
         (&Some(ref client_id), &None) => (client_id.as_ref(), None),
         _ => return Err(Error::invalid()),
     };
+    println!("client_id {:?}, {:?}", client_id, auth);
 
     handler.registrar()
         .check(&client_id, auth)
@@ -125,9 +127,13 @@ pub fn access_token(handler: &mut Endpoint, request: &Request) -> Result<BearerT
         .ok_or(Error::invalid())?;
     let redirect_uri = redirect_uri.as_ref();
 
-    if (saved_params.client_id.as_ref(), saved_params.redirect_uri.as_str()) != (client_id, redirect_uri) {
+    println!("{:?}, {}, {}", saved_params, client_id, redirect_uri);
+    if saved_params.client_id.as_str() != client_id && !saved_params.redirect_uri.as_str().starts_with(redirect_uri) {
         return Err(Error::invalid_with(AccessTokenErrorType::InvalidGrant))
     }
+//    if (saved_params.client_id.as_ref(), saved_params.redirect_uri.as_str()) != (client_id, redirect_uri) {
+//        return Err(Error::invalid_with(AccessTokenErrorType::InvalidGrant))
+//    }
 
     if saved_params.until < Utc::now() {
         return Err(Error::invalid_with(AccessTokenErrorType::InvalidGrant))

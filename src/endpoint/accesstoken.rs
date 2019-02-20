@@ -99,7 +99,7 @@ impl<E, R> AccessTokenFlow<E, R> where E: Endpoint<R>, R: WebRequest {
 }
 
 fn token_error<E: Endpoint<R>, R: WebRequest>(endpoint: &mut E, request: &mut R, error: TokenError)
-    -> Result<R::Response, E::Error> 
+    -> Result<R::Response, E::Error>
 {
     Ok(match error {
         TokenError::Invalid(mut json) => {
@@ -166,7 +166,7 @@ impl<'a, R: WebRequest + 'a> WrappedRequest<'a, R> {
 
         Ok(WrappedRequest {
             request: PhantomData,
-            body: request.urlbody()?,
+            body: request.query()?,
             authorization,
             error: None,
         })
