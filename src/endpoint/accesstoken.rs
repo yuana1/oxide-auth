@@ -232,6 +232,10 @@ impl<'a, R: WebRequest> TokenRequest for WrappedRequest<'a, R> {
         self.body.unique_value("client_id")
     }
 
+    fn client_secret(&self) -> Option<Cow<str>> {
+        self.body.unique_value("client_secret")
+    }
+
     fn redirect_uri(&self) -> Option<Cow<str>> {
         self.body.unique_value("redirect_uri")
     }

@@ -28,6 +28,9 @@ pub trait Request {
     /// The client_id, optional parameter for public clients.
     fn client_id(&self) -> Option<Cow<str>>;
 
+    /// The client_secret
+    fn client_secret(&self) -> Option<Cow<str>>;
+
     /// Valid request have the redirect url used to request the authorization code grant.
     fn redirect_uri(&self) -> Option<Cow<str>>;
 
@@ -84,13 +87,17 @@ pub fn access_token(handler: &mut Endpoint, request: &Request) -> Result<BearerT
 
     let authorization = request.authorization();
     let client_id = request.client_id();
-    println!("client_id {:?}, {:?}", client_id, authorization);
+    let client_secret = request.client_secret();
     let (client_id, auth): (&str, Option<&[u8]>) = match (&client_id, &authorization) {
         (&None, &Some((ref client_id, ref auth))) => (client_id.as_ref(), Some(auth.as_ref())),
-        (&Some(ref client_id), &None) => (client_id.as_ref(), None),
+        (&Some(ref client_id), &None) => {
+            match &client_secret {
+                Some(ref client_secret) => (client_id.as_ref(), Some(client_secret.as_ref().as_bytes())),
+                None => (client_id.as_ref(), None)
+            }
+        },
         _ => return Err(Error::invalid()),
     };
-    println!("client_id {:?}, {:?}", client_id, auth);
 
     handler.registrar()
         .check(&client_id, auth)
