@@ -3,20 +3,20 @@
 //! It will govern their redirect urls and allowed scopes to request tokens for. When an oauth
 //! request turns up, it is the registrars duty to verify the requested scope and redirect url for
 //! consistency in the permissions granted and urls registered.
-use super::scope::Scope;
-
 use std::borrow::Cow;
 use std::cmp;
 use std::collections::HashMap;
 use std::fmt;
 use std::iter::{Extend, FromIterator};
-use std::sync::{Arc, MutexGuard, RwLockWriteGuard};
 use std::rc::Rc;
+use std::sync::{Arc, MutexGuard, RwLockWriteGuard};
 
-use url::Url;
 use ring::{digest, pbkdf2};
 use ring::error::Unspecified;
-use ring::rand::{SystemRandom, SecureRandom};
+use ring::rand::{SecureRandom, SystemRandom};
+use url::Url;
+
+use super::scope::Scope;
 
 /// Registrars provie a way to interact with clients.
 ///
@@ -522,7 +522,6 @@ impl Registrar for ClientMap {
             _ => return Err(RegistrarError::Unspecified),
         }
 
-        println!("{:?}", bound);
         Ok(BoundClient {
             client_id: bound.client_id,
             redirect_uri: bound.redirect_uri.unwrap_or_else(

@@ -7,27 +7,26 @@ extern crate actix_web;
 extern crate futures;
 extern crate serde_urlencoded;
 
+use std::error;
+use std::fmt;
+
+// pub use self::endpoint::CodeGrantEndpoint;
+pub use endpoint::{OAuthError, OwnerConsent, OwnerSolicitor, PreGrant};
+pub use primitives::grant::Grant;
+
+pub use self::actix_web::{HttpRequest, HttpResponse};
+use self::actix_web::ResponseError;
+pub use self::future_endpoint::{access_token, authorization, resource, ResourceProtection};
+pub use self::request::OAuthFuture;
+pub use self::request::OAuthRequest;
+pub use self::request::OAuthResponse;
+
 mod future_endpoint;
 mod endpoint;
 pub mod message;
 pub mod request;
 #[cfg(test)]
 mod tests;
-
-use std::fmt;
-use std::error;
-
-use self::actix_web::{HttpRequest, HttpResponse};
-use self::actix_web::ResponseError;
-
-// pub use self::endpoint::CodeGrantEndpoint;
-pub use endpoint::{PreGrant, OAuthError, OwnerConsent, OwnerSolicitor};
-pub use primitives::grant::Grant;
-pub use self::request::OAuthFuture;
-pub use self::request::OAuthRequest;
-pub use self::request::OAuthResponse;
-
-pub use self::future_endpoint::{ResourceProtection, access_token, authorization, resource};
 
 /// Bundles all oauth related methods under a single type.
 pub trait OAuth {

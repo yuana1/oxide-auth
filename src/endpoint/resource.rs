@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 
 use code_grant::resource::{
-    protect,
-    Error as ResourceError,
     Endpoint as ResourceEndpoint,
+    Error as ResourceError,
+    protect,
     Request as ResourceRequest};
 use primitives::grant::Grant;
 
@@ -19,6 +19,8 @@ struct WrappedResource<E: Endpoint<R>, R: WebRequest>(E, PhantomData<R>);
 struct WrappedRequest<R: WebRequest> {
     /// Original request.
     request: PhantomData<R>,
+
+    body: Option<String>,
 
     /// The authorization token.
     authorization: Option<String>,
@@ -115,6 +117,7 @@ impl<R: WebRequest> WrappedRequest<R> {
         WrappedRequest {
             request: PhantomData,
             authorization: token,
+            body: None,
             error: None,
         }
     }
@@ -123,6 +126,7 @@ impl<R: WebRequest> WrappedRequest<R> {
         WrappedRequest {
             request: PhantomData,
             authorization: None,
+            body: None,
             error: Some(Some(error)),
         }
     }

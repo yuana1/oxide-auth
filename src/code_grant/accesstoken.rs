@@ -7,8 +7,8 @@ use serde_json;
 
 use code_grant::error::{AccessTokenError, AccessTokenErrorType};
 use primitives::authorizer::Authorizer;
-use primitives::issuer::{IssuedToken, Issuer};
 use primitives::grant::{Extensions, Grant};
+use primitives::issuer::{IssuedToken, Issuer};
 use primitives::registrar::{Registrar, RegistrarError};
 
 /// Trait based retrieval of parameters necessary for access token request handling.
@@ -134,7 +134,6 @@ pub fn access_token(handler: &mut Endpoint, request: &Request) -> Result<BearerT
         .ok_or(Error::invalid())?;
     let redirect_uri = redirect_uri.as_ref();
 
-    println!("{:?}, {}, {}", saved_params, client_id, redirect_uri);
     if saved_params.client_id.as_str() != client_id && !saved_params.redirect_uri.as_str().starts_with(redirect_uri) {
         return Err(Error::invalid_with(AccessTokenErrorType::InvalidGrant))
     }

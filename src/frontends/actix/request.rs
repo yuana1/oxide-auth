@@ -5,16 +5,16 @@
 //! future yielding the specific message to be sent to the endpoint.
 use std::borrow::Cow;
 
-use endpoint::{OAuthError, NormalizedParameter, PreGrant, QueryParameter, WebRequest, WebResponse};
+use url::Url;
+
+use endpoint::{NormalizedParameter, OAuthError, PreGrant, QueryParameter, WebRequest, WebResponse};
 use frontends::simple::request::{Body, Response, Status};
 
 use super::actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use super::actix_web::dev::UrlEncoded;
 use super::actix_web::http::header::{self, HeaderValue};
 use super::futures::{Async, Future, Poll};
-use super::message::{AuthorizationCode, AccessToken, Resource};
-
-use url::Url;
+use super::message::{AccessToken, AuthorizationCode, Resource};
 use super::serde_urlencoded;
 
 /// A future for all OAuth related data.
@@ -259,10 +259,15 @@ impl WebRequest for OAuthRequest {
          match &self.auth {
              &Ok(Some(ref string)) => Ok(Some(Cow::Borrowed(string))),
              &Ok(None) => {
-                 let query = self.query.unwrap();
-                 let client_id = query.unique_value("client_id").unwrap();
-                 let client_secret = query.unique_value("client_secret").unwrap();
-                 Ok(Some(Cow::Borrowed(&("Basic + ".to_owned() + &base64::encode(&(client_id.to_string() + ":" + client_secret.as_ref()))))))
+                 Ok(None)
+//                 match &self.query {
+//                     Ok(query) => {
+//                         let client_id = query.unique_value("client_id").unwrap();
+//                         let client_secret = query.unique_value("client_secret").unwrap();
+//                         Ok(Some(Cow::Owned(("Basic + ".to_owned() + &base64::encode(&(client_id.to_string() + ":" + client_secret.as_ref()))))))
+//                     },
+//                     Err(_) => Err(OAuthError::BadRequest)
+//                    }
              },
              &Err(_) => Err(OAuthError::BadRequest)
          }
