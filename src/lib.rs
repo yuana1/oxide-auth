@@ -80,6 +80,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate bytes;
+extern crate actix_web;
 
 pub mod code_grant;
 pub mod endpoint;

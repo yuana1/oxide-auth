@@ -1,5 +1,8 @@
 use std::borrow::Cow;
 
+use actix_web::FromRequest;
+use actix_web::HttpResponse;
+
 use code_grant::resource::{
     Endpoint as ResourceEndpoint,
     Error as ResourceError,
@@ -113,7 +116,13 @@ impl<R: WebRequest> WrappedRequest<R> {
             Ok(None) => None,
             Err(error) => return Self::from_error(error),
         };
-
+// TODO 添加body
+//        let body = String::from_request(&request, &actix_web::extractor::PayloadConfig::default()).unwrap().poll();
+//        let body = match body {
+//            Ok(futures::Async::Ready(val)) => Some(val),
+//            Ok(futures::Async::NotReady) => None,
+//            Err(_) => None,
+//        };
         WrappedRequest {
             request: PhantomData,
             authorization: token,

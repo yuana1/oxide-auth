@@ -223,7 +223,6 @@ impl Future for OAuthFuture {
             Some(Err(_)) => Err(()),
             None => Ok(None),
         };
-        println!("{:?}", auth);
 
         Ok(Async::Ready(OAuthRequest {
             query,
