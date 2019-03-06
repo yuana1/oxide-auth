@@ -190,9 +190,9 @@ impl Pending {
            until: Utc::now() + Duration::minutes(10),
            extensions: self.extensions,
        }).map_err(|()| Error::PrimitiveError)?;
-
+        let code = url::percent_encoding::percent_encode(grant.as_str().as_bytes(), url::percent_encoding::USERINFO_ENCODE_SET).to_string();
        url.query_pairs_mut()
-           .append_pair("code", grant.as_str())
+           .append_pair("code", code.as_str())
            .extend_pairs(self.state.map(|v| ("state", v)))
            .finish();
        Ok(url)

@@ -166,7 +166,7 @@ impl<'a, R: WebRequest + 'a> WrappedRequest<'a, R> {
 
         Ok(WrappedRequest {
             request: PhantomData,
-            body: request.query()?,
+            body: request.urlbody()?,
             authorization,
             error: None,
         })

@@ -120,7 +120,8 @@ pub fn access_token(handler: &mut Endpoint, request: &Request) -> Result<BearerT
         .ok_or(Error::invalid())?;
     let code = code.as_ref();
 
-    let saved_params = match handler.authorizer().extract(code) {
+    let code = url::percent_encoding::percent_decode(code.as_bytes()).decode_utf8().unwrap();
+    let saved_params = match handler.authorizer().extract(&code) {
         Err(()) => return Err(Error::Primitive(PrimitiveError {
             grant: None,
             extensions: None,
